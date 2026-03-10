@@ -96,6 +96,8 @@ jobs:
     name: Look for hardcoded images
     if: needs.get-chart.outputs.result == 'ok'
     steps:
+      - name: Safer Runner
+        uses: portswigger-tim/safer-runner-action@a302a6cf1e0af681fc822a11f7fc12731596f7e7 # main
       - name: Checkout bitnami/charts
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
@@ -173,6 +175,8 @@ jobs:
       result: ${{ steps.update-pr.outputs.result }}
     if: needs.get-chart.outputs.result == 'ok'
     steps:
+      - name: Safer Runner
+        uses: portswigger-tim/safer-runner-action@a302a6cf1e0af681fc822a11f7fc12731596f7e7 # main
       - name: Checkout bitnami/charts
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         with:
@@ -559,6 +563,8 @@ jobs:
       )
     name: VIB Verify
     steps:
+      - name: Safer Runner
+        uses: portswigger-tim/safer-runner-action@a302a6cf1e0af681fc822a11f7fc12731596f7e7 # main
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
         name: Checkout Repository
         with:
@@ -575,8 +581,10 @@ jobs:
           echo "Chart: ${CHART} ChartVersion: ${chart_version} AppVersion: ${app_version}"
       - id: get-asset-vib-config
         name: Get asset-specific configuration for VIB action
+        env:
+          CHART: ${{ needs.get-chart.outputs.chart }}
         run: |
-          config_file=".vib/${{ needs.get-chart.outputs.chart }}/vib-action.config"
+          config_file=".vib/${CHART}/vib-action.config"
 
           # Supported configuration customizations and default values
           verification_mode="PARALLEL"
@@ -585,13 +593,13 @@ jobs:
             verification_mode="$(cat $config_file | grep 'verification-mode' | cut -d'=' -f2)"
           fi
           runtime_parameters_file=""
-          if [[ -f ".vib/${{ needs.get-chart.outputs.chart }}/runtime-parameters.yaml" ]]; then
+          if [[ -f ".vib/${CHART}/runtime-parameters.yaml" ]]; then
             # The path is relative to the .vib folder
-            runtime_parameters_file="${{ needs.get-chart.outputs.chart }}/runtime-parameters.yaml"
+            runtime_parameters_file="${CHART}/runtime-parameters.yaml"
           fi
           echo "verification_mode=${verification_mode}" >> $GITHUB_OUTPUT
           echo "runtime_parameters_file=${runtime_parameters_file}" >> $GITHUB_OUTPUT
-      - uses: vmware-labs/vmware-image-builder-action@v0
+      - uses: vmware-labs/vmware-image-builder-action@90ab5b51680627fe01ea9b2d9ba5d7c9db4c56bc # v0
         name: Verify ${{ needs.get-chart.outputs.chart }}
         with:
           pipeline: ${{ needs.get-chart.outputs.chart }}/vib-verify.json
